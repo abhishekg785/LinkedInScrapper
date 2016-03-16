@@ -7,7 +7,7 @@ var express = require('express')
 var con = mysql.createConnection({
     host:'localhost',
     user:'root',
-    password:'YOUR_PASSWORD',
+    password:'sushmagiri',
     database:'scrapper'
 });
 
@@ -29,20 +29,23 @@ var url = "";
 //save into the mysql database
 
 //middleware to perform the scrapping
-function get_url(req,res,next){
-  //the url will be of the current tab
-  url = 'https://in.linkedin.com/in/abhishek-goswami-591541b1';
-  if(url == ""){
-    res.end('null');
-  }
-  else{
-  next();
-  }
-}
+// function get_url(req,res,next){
+//   //the url will be of the current tab
+//   url = 'https://www.linkedin.com/in/pransh-tiwari-9aa57988';
+//   if(url == ""){
+//     res.end('null');
+//   }
+//   else{
+//   next();
+//   }
+// }
 
-app.use(get_url)
+// app.use(get_url)
 
-app.get('/',get_url,function(req,res){
+app.get('/home',function(req,res){
+   //var url = 'http://'+req.params.url;
+   var url = req.query.url;
+   console.log(url);
    var dataArr = [];
    var name = "";
    var location = "";
@@ -88,8 +91,10 @@ app.get('/',get_url,function(req,res){
            if(index == 0){
              current_Organistaion = data.text();
            }
-           else if(index == 2){
-             education = data.text();
+           if(index == 1 || index ==2){
+             if(data.text() != 'abcdefghijklmnopqrstuvwxyzmoreBrowse members by country'){
+               education = data.text();
+             }
            }
           });
 
@@ -105,14 +110,24 @@ app.get('/',get_url,function(req,res){
           education:education
        };
       console.log(dataJSON);
+      if(dataJSON.name=="" || dataJSON.location=="" || dataJSON.industry=="" || dataJSON.current_organisation=="" || dataJSON.education==""){
+        //do nothing
+      }
+      else{
+      //sending data to db
       con.query('INSERT INTO signature SET ?',dataJSON,function(err,res){
         if(err){
           throw err;
         }
         console.log('last insert id:',res.insertId);
       });
-
+    }
+   //res.send(dataJSON);
   });
+});
+
+app.get('/home',function(req,res){
+    console.log(req.query.url);
 });
 
 app.listen(3000,function(){
